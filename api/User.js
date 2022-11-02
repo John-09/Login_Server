@@ -19,6 +19,9 @@ require("dotenv").config();
 //password handle
 const bcrypt=require('bcrypt');
 
+//path for static verified path
+const path=require("path");
+
 //nodemailer stuff
 let transporter=nodemailer.createTransport({
     service:"gmail",
@@ -171,6 +174,55 @@ const sendVerificationEmail=({_id,email},res)=>{
         })
     })
 }
+
+//verify email
+router.get("/verify/:userId/uniqueString",(req,res)=>{
+    let{userId,uniqueString}=req.params;
+    UserVerification
+    .find({userId})
+    .then((result)=>{
+        if(result.length>0){
+            //user rec verification exists
+
+            const {expiresAt}=result[0];
+            if(expiresAt<Date.now()){
+                UserVerification
+                .deleteOne({userId})
+                .then(result=>{
+                    User
+                    .deleteOne({_id:userId})
+                    .then(()=>{
+                        let message="Link has expired.Please signup again";
+                        res.redirect(`/user/verified/error=true&messages=${message}`);
+                    })
+                    .catch(error=>{
+                        let message="Clearing user with expired unique string failed";
+                        res.redirect(`/user/verified/error=true&messages=${message}`);
+                    })
+                })
+                .catch((error)=>{
+                    console.log(error);
+                    let message="An error occured while clearing expired user verification record";
+                    res.redirect(`/user/verified/error=true&messages=${message}`);
+                })
+            }
+        }
+        else{
+            let message="Acc record doesn't exist or verified already. Please signnin";
+            res.redirect(`/user/verified/error=true&messages=${message}`);
+        }
+    })
+    .catch((error)=>{
+        console.log(error);
+        let message="An error occured while checking for existing user verification record";
+        res.redirect(`/user/verified/error=true&messages=${message}`);
+    })
+});
+
+//verified page route
+router.get("/verified",(req,res)=>{
+    res.sendFile(path.join(__dirname,"./../views/verified.html"));
+})
 
 //Signin
 router.post('/signin',(req,res)=>{
