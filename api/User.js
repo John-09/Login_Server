@@ -176,7 +176,7 @@ const sendVerificationEmail=({_id,email},res)=>{
 }
 
 //verify email
-router.get("/verify/:userId/uniqueString",(req,res)=>{
+router.get("/verify/:userId/:uniqueString",(req,res)=>{
     let{userId,uniqueString}=req.params;
     UserVerification
     .find({userId})
